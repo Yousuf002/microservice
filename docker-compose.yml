@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  auth-service:
+    build: ./auth
+    container_name: auth
+    expose:
+      - "3000"
+    environment:
+      - PORT=3000
+      - JWT_SECRET=your_jwt_secret
+    networks:
+      - todo-network
+    restart: unless-stopped
+
+  todo-service:
+    build: ./todo
+    container_name: todo
+    expose:
+      - "3001"
+    environment:
+      - PORT=3001
+      - JWT_SECRET=your_jwt_secret
+      - AUTH_SERVICE_URL=http://auth-service:3000
+    networks:
+      - todo-network
+    depends_on:
+      - auth-service
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    networks:
+      - todo-network
+    restart: unless-stopped
+
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    ports:
+      - "8080:80"
+    networks:
+      - todo-network
+    depends_on:
+      - auth-service
+      - todo-service
+      - frontend
+    restart: unless-stopped
+
+networks:
+  todo-network:
+    driver: bridge
